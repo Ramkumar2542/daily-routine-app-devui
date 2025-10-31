@@ -1,0 +1,24 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f6f7fb;
+  }
+  
+  mat-card {
+    padding: 2rem;
+    width: 350px;
+    text-align: center;
+  }
+  
+  .full-width {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .switch-link {
+    margin-top: 1rem;
+    font-size: 14px;
+  }
+  
