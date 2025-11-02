@@ -28,12 +28,14 @@
       <button mat-raised-button color="primary" class="full-width" type="submit">
         Register
       </button>
-
     </form>
 
     <p class="switch-link">
       Already have an account?
       <a routerLink="/auth/login">Login</a>
     </p>
+    <button mat-raised-button color="primary" (click)="loadUsers()">
+      GETUSERS
+      </button>
   </mat-card>
 </div>

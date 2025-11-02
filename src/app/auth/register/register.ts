@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-register',
@@ -31,7 +32,7 @@ export class RegisterComponent {
 
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private authService: AuthService) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -40,10 +41,26 @@ export class RegisterComponent {
   }
 
   submit() {
-    if (this.form.value.password !== this.form.value.confirmPassword) {
-      alert("Passwords do not match");
+    if (this.form.invalid) return;
+    const { email, password, confirmPassword } = this.form.value;
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
-    console.log(this.form.value);
+    this.authService.register(email!, password!).subscribe({
+      next: () => {
+        alert('Registered successfully');
+      },
+      error: (err) => {
+        alert(err.error.message || 'Registration failed');
+      }
+    });
+  }
+
+  loadUsers(){
+    this.authService.getUsers().subscribe({
+      next: (res) => { console.log('REs',res) },
+      error: (err) => { console.log(err); }
+    });
   }
 }

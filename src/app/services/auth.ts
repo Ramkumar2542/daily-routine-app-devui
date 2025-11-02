@@ -1,56 +1,63 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
-import { tap, map } from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 interface AuthResponse {
-  token: string;
-  user: { id: string; email: string; };
+  accessToken: string; // We're now calling it accessToken
+  user: { id: string; email: string };
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private base = 'http://localhost:4000/api/auth';
-  private tokenKey = 'auth_token';
-  private userKey = 'auth_user';
-  private authState = new BehaviorSubject<boolean>(!!this.getToken());
+  private base = 'http://localhost:3000/api/auth';
+  private accessToken: string | null = null; // ✅ Stored only in memory
+
+  private authState = new BehaviorSubject<boolean>(false);
+  isAuthenticated$ = this.authState.asObservable();
 
   constructor(private http: HttpClient) {}
 
-  isAuthenticated$(): Observable<boolean> {
-    return this.authState.asObservable();
-  }
-
   register(email: string, password: string) {
-    return this.http.post<AuthResponse>(`${this.base}/register`, { email, password })
-      .pipe(tap(r => this.setSession(r)));
+    return this.http.post<AuthResponse>(`${this.base}/register`, { email, password }, { withCredentials: true })
+      .pipe(tap(res => this.handleLoginSuccess(res)));
   }
-
+  
   login(email: string, password: string) {
-    return this.http.post<AuthResponse>(`${this.base}/login`, { email, password })
-      .pipe(tap(r => this.setSession(r)));
+    return this.http.post<AuthResponse>(`${this.base}/login`, { email, password }, { withCredentials: true })
+      .pipe(tap(res => this.handleLoginSuccess(res)));
   }
 
-  private setSession(res: AuthResponse) {
-    localStorage.setItem(this.tokenKey, res.token);
-    localStorage.setItem(this.userKey, JSON.stringify(res.user));
+  private handleLoginSuccess(res: AuthResponse) {
+    this.accessToken = res.accessToken;
     this.authState.next(true);
   }
 
   logout() {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    this.accessToken = null;
     this.authState.next(false);
   }
 
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+  getAccessToken(): string | null {
+    return this.accessToken;
   }
 
-  getUser() {
-    const u = localStorage.getItem(this.userKey);
-    return u ? JSON.parse(u) : null;
+  // 👉 Called automatically by interceptor when token is expired
+  refreshToken() {
+    return this.http.post<{ accessToken: string }>(
+      `${this.base}/refresh`,
+      {},
+      { withCredentials: true } // ✅ Needed to send the refresh cookie
+    ).pipe(tap(res => {
+      this.accessToken = res.accessToken; // ✅ Store new access token
+    }));
+  }
+
+  getUsers() {
+    return this.http.get<{ users: any[] }>(`${this.base}/users`, {
+      withCredentials: true // ✅ REQUIRED
+    });
   }
 }
